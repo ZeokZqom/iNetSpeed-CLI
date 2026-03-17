@@ -48,7 +48,7 @@ normalize_binary() {
   normalized="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
   case "$normalized" in
     speedtest|inetspeed)
-      printf '%s\n' "$normalized"
+      BINARY="$normalized"
       ;;
     *)
       die "BINARY must be speedtest or inetspeed."
@@ -71,7 +71,7 @@ choose_binary() {
         printf '\n' >&3
         exec 3>&-
         exec 3<&-
-        printf '%s\n' "${DEFAULT_BINARY}"
+        BINARY="${DEFAULT_BINARY}"
         return
       fi
       normalized="$(printf '%s' "$choice" | tr '[:upper:]' '[:lower:]')"
@@ -79,13 +79,13 @@ choose_binary() {
         ""|"1"|speedtest)
           exec 3>&-
           exec 3<&-
-          printf '%s\n' "speedtest"
+          BINARY="speedtest"
           return
           ;;
         "2"|inetspeed)
           exec 3>&-
           exec 3<&-
-          printf '%s\n' "inetspeed"
+          BINARY="inetspeed"
           return
           ;;
         *)
@@ -99,17 +99,17 @@ choose_binary() {
     while true; do
       printf 'Install command name [1] speedtest [2] inetspeed (Enter=1): '
       if ! IFS= read -r choice; then
-        printf '%s\n' "${DEFAULT_BINARY}"
+        BINARY="${DEFAULT_BINARY}"
         return
       fi
       normalized="$(printf '%s' "$choice" | tr '[:upper:]' '[:lower:]')"
       case "$normalized" in
         ""|"1"|speedtest)
-          printf '%s\n' "speedtest"
+          BINARY="speedtest"
           return
           ;;
         "2"|inetspeed)
-          printf '%s\n' "inetspeed"
+          BINARY="inetspeed"
           return
           ;;
         *)
@@ -119,7 +119,7 @@ choose_binary() {
     done
   fi
 
-  printf '%s\n' "${DEFAULT_BINARY}"
+  BINARY="${DEFAULT_BINARY}"
 }
 
 download() {
@@ -268,7 +268,7 @@ ensure_user_path() {
 
 main() {
   local platform os arch ext asset archive_path sum_path tmpdir install_dir target extracted run_hint
-  BINARY="$(choose_binary)"
+  choose_binary
   IFS='/' read -r os arch ext <<< "$(detect_platform)"
   asset="${RELEASE_BINARY}-${os}-${arch}.${ext}"
 
