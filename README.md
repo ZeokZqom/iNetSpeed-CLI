@@ -13,6 +13,8 @@
 curl -fsSL https://raw.githubusercontent.com/tsosunchia/iNetSpeed-CLI/main/scripts/install.sh | bash
 ```
 
+安装器会询问命令名：`speedtest` 或 `inetspeed`，直接回车默认 `speedtest`。
+
 默认安装位置：
 
 - 普通用户优先安装到 `~/.local/bin`；如果 `~/bin` 已在 `PATH` 中，则优先复用 `~/bin`
@@ -31,12 +33,14 @@ PowerShell:
 irm https://raw.githubusercontent.com/tsosunchia/iNetSpeed-CLI/main/scripts/install.ps1 | iex
 ```
 
+安装器会询问命令名：`speedtest` 或 `inetspeed`，直接回车默认 `speedtest`。
+
 或直接下载 `speedtest-windows-amd64.zip`。
 
 默认安装位置：
 
-- 普通用户安装到 `%LOCALAPPDATA%\Programs\speedtest`
-- 管理员安装到 `%ProgramFiles%\speedtest`
+- 普通用户安装到 `%LOCALAPPDATA%\Programs\<所选命令名>`
+- 管理员安装到 `%ProgramFiles%\<所选命令名>`
 - 安装脚本会把目录写入用户级或机器级 `PATH`
 
 ## Legacy Shell 脚本
@@ -56,6 +60,8 @@ irm https://raw.githubusercontent.com/tsosunchia/iNetSpeed-CLI/main/scripts/inst
 ## 快速开始
 
 直接运行：
+
+若安装时选择了 `inetspeed`，把下面示例里的命令名替换为 `inetspeed`。
 
 ```bash
 speedtest

@@ -2,7 +2,14 @@
 set -euo pipefail
 
 REPO="${REPO:-tsosunchia/iNetSpeed-CLI}"
-BINARY="${BINARY:-speedtest}"
+DEFAULT_BINARY="speedtest"
+RELEASE_BINARY="speedtest"
+BINARY_ENV_SET=0
+if [[ "${BINARY+x}" == x ]]; then
+  BINARY_ENV_SET=1
+fi
+BINARY_ENV_VALUE="${BINARY-}"
+BINARY=""
 RELEASE_BASE="${RELEASE_BASE:-https://github.com/${REPO}/releases/latest/download}"
 RELEASES_URL="${RELEASES_URL:-https://github.com/${REPO}/releases/latest}"
 
@@ -33,6 +40,86 @@ die() {
 
 has_cmd() {
   command -v "$1" >/dev/null 2>&1
+}
+
+normalize_binary() {
+  local value="$1"
+  local normalized
+  normalized="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  case "$normalized" in
+    speedtest|inetspeed)
+      printf '%s\n' "$normalized"
+      ;;
+    *)
+      die "BINARY must be speedtest or inetspeed."
+      ;;
+  esac
+}
+
+choose_binary() {
+  local choice normalized
+
+  if (( BINARY_ENV_SET )); then
+    normalize_binary "${BINARY_ENV_VALUE}"
+    return
+  fi
+
+  if [[ -t 1 ]] && exec 3<> /dev/tty 2>/dev/null; then
+    while true; do
+      printf 'Install command name [1] speedtest [2] inetspeed (Enter=1): ' >&3
+      if ! IFS= read -r choice <&3; then
+        printf '\n' >&3
+        exec 3>&-
+        exec 3<&-
+        printf '%s\n' "${DEFAULT_BINARY}"
+        return
+      fi
+      normalized="$(printf '%s' "$choice" | tr '[:upper:]' '[:lower:]')"
+      case "$normalized" in
+        ""|"1"|speedtest)
+          exec 3>&-
+          exec 3<&-
+          printf '%s\n' "speedtest"
+          return
+          ;;
+        "2"|inetspeed)
+          exec 3>&-
+          exec 3<&-
+          printf '%s\n' "inetspeed"
+          return
+          ;;
+        *)
+          printf 'Please enter 1, 2, speedtest, or inetspeed.\n' >&3
+          ;;
+      esac
+    done
+  fi
+
+  if [[ -t 0 && -t 1 ]]; then
+    while true; do
+      printf 'Install command name [1] speedtest [2] inetspeed (Enter=1): '
+      if ! IFS= read -r choice; then
+        printf '%s\n' "${DEFAULT_BINARY}"
+        return
+      fi
+      normalized="$(printf '%s' "$choice" | tr '[:upper:]' '[:lower:]')"
+      case "$normalized" in
+        ""|"1"|speedtest)
+          printf '%s\n' "speedtest"
+          return
+          ;;
+        "2"|inetspeed)
+          printf '%s\n' "inetspeed"
+          return
+          ;;
+        *)
+          printf 'Please enter 1, 2, speedtest, or inetspeed.\n'
+          ;;
+      esac
+    done
+  fi
+
+  printf '%s\n' "${DEFAULT_BINARY}"
 }
 
 download() {
@@ -181,14 +268,16 @@ ensure_user_path() {
 
 main() {
   local platform os arch ext asset archive_path sum_path tmpdir install_dir target extracted run_hint
+  BINARY="$(choose_binary)"
   IFS='/' read -r os arch ext <<< "$(detect_platform)"
-  asset="${BINARY}-${os}-${arch}.${ext}"
+  asset="${RELEASE_BINARY}-${os}-${arch}.${ext}"
 
   tmpdir="$(mktemp -d)"
   trap "cleanup '${tmpdir}'" EXIT
   archive_path="${tmpdir}/${asset}"
   sum_path="${tmpdir}/checksums-sha256.txt"
 
+  log "Command name: ${BINARY}"
   log "Downloading ${asset}"
   download "${RELEASE_BASE}/${asset}" "${archive_path}"
 
@@ -200,7 +289,7 @@ main() {
 
   log "Extracting archive"
   tar -xzf "${archive_path}" -C "${tmpdir}"
-  extracted="${tmpdir}/${BINARY}"
+  extracted="${tmpdir}/${RELEASE_BINARY}"
 
   install_dir="$(choose_install_dir)"
   install_dir="${install_dir%/}"
